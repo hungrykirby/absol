@@ -14,7 +14,7 @@ TIME_LEAP_MODE は時渡りバグを使うときの方法
 #define SUANA 2
 #define CAMP 3
 
-const int TIME_LEAP_MODE = SUANA;
+const int TIME_LEAP_MODE = RANKBATTLE;
 
 long int loopcount = 0;
 
@@ -103,9 +103,10 @@ void symbolEncount(){
     // プレッシャーのアブソル用
     myPush(Button::A, 200, 2);
     myPush(Button::B, 200, 5);
-    // 雨＋エレキフィールド＋プレッシャー
     // ガラルマタドガス（かがくへんか）がいるとプレッシャーが発動しないため精度が上がる。
-    myDelay(7750);
+    // myDelay(7750); // 雨＋エレキフィールド＋かがくへんかガス 2021/11/04
+    // ピクシー 2021/10/13
+    myDelay(5700); // アイアント + かがくへんかガス 2021/09/23
     myPush(Button::B, 200, 5);
     // アブソルここまで
 
@@ -240,9 +241,14 @@ void setup(){
 
 void loop(){
     moveToInitialPlayerPosition();
-    if(loopcount > 0){
+    if(TIME_LEAP_MODE == RANKBATTLE){
+      symbolEncount();
       execTimeLeep();
+    }else if(TIME_LEAP_MODE == SUANA){
+      if(loopcount > 0){
+        execTimeLeep();
+      }
+      symbolEncount();
     }
-    symbolEncount();
     loopcount++;
 }
