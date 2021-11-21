@@ -4,6 +4,20 @@
 const uint16_t BUTTON_PUSHING_MSEC = 95;
 bool method_in = false;
 
+/*
+TIME_LEAP_MODE は時渡りバグを使うときの方法
+1 がランクマバグを使用する。ランクマバグはいちいちランクバトルをするためすこしめんどくさい
+2 が巣穴の「みんなで」から時渡りする方法。ワットがたまっていいが空を飛ぶスポットが変わるのでコードの分岐が発生する
+3 がキャンプによる時渡り。
+*/
+#define RANKBATTLE 1
+#define SUANA 2
+#define CAMP 3
+
+const int TIME_LEAP_MODE = RANKBATTLE;
+
+long int loopcount = 0;
+
 void myDelay(int delay_ms, unsigned long method_start_ms = -1) {
   if(method_start_ms == -1){
     method_start_ms = millis();
@@ -89,8 +103,10 @@ void symbolEncount(){
     // プレッシャーのアブソル用
     myPush(Button::A, 200, 2);
     myPush(Button::B, 200, 5);
-    // 雨＋エレキフィールド＋プレッシャー
-    myDelay(7750);
+    // ガラルマタドガス（かがくへんか）がいるとプレッシャーが発動しないため精度が上がる。
+    // myDelay(7750); // 雨＋エレキフィールド＋かがくへんかガス 2021/11/04
+    // ピクシー 2021/10/13
+    myDelay(5700); // アイアント + かがくへんかガス 2021/09/23
     myPush(Button::B, 200, 5);
     // アブソルここまで
 
@@ -108,11 +124,23 @@ void symbolEncount(){
 
 // 日付変更する（事前にランクマッチ使用した後の時渡り）
 void execTimeLeep(){
-    // みんなで挑戦→通信待機中
-  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 4000);
   // ホーム画面へ
-  myPushButton(Button::HOME, BUTTON_PUSHING_MSEC, 1500);
+  if(TIME_LEAP_MODE == RANKBATTLE){
+    myPushButton(Button::A, BUTTON_PUSHING_MSEC, 4000);
+    myPushButton(Button::HOME, BUTTON_PUSHING_MSEC, 1500);
+    changeTimeAtHome(3);
+  }else if(TIME_LEAP_MODE == SUANA){
+    runToSuana();
 
+    // 一回一日進めたうえで画面に戻ってこないと固定シンボルが復活しない気がする。
+    suanaTimeLeap(1); // 一日進めて画面に戻ってきて再び巣穴から募集して
+    suanaTimeLeap(2); // 一日戻る（ワットもゲット！）
+
+    initPosFromSuana();
+  }
+}
+
+void changeTimeAtHome(int mode){ // mode 1 => go 1 day, mode 2 => 1 day ago, mode 3 => both
   // ホームで設定まで行く
   myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
   for(int i = 0; i < 5; i++){
@@ -133,22 +161,75 @@ void execTimeLeep(){
   myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
   myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
   myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
-  myPushHatButton(Hat::RIGHT, BUTTON_PUSHING_MSEC, 100);
-  myPushHatButton(Hat::RIGHT, BUTTON_PUSHING_MSEC, 100);
-  myPushHatButton(Hat::UP, BUTTON_PUSHING_MSEC, 100);
-  myPushHatButton(Hat::RIGHT, 1000, 100);
-  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
-  // 1日戻してOK
-  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
-  myPushHatButton(Hat::LEFT, BUTTON_PUSHING_MSEC, 100);
-  myPushHatButton(Hat::LEFT, BUTTON_PUSHING_MSEC, 100);
-  myPushHatButton(Hat::LEFT, BUTTON_PUSHING_MSEC, 100);
-  myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
-  myPushHatButton(Hat::RIGHT, 1000, 100);
-  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
+  if(mode == 3){
+    myPushHatButton(Hat::RIGHT, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::RIGHT, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::UP, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::RIGHT, 1000, 100);
+    myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
+    // 1日戻してOK
+    myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
+    myPushHatButton(Hat::LEFT, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::LEFT, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::LEFT, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::RIGHT, 1000, 100);
+    myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
+  }else if(mode == 1){
+    myPushHatButton(Hat::RIGHT, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::RIGHT, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::UP, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::RIGHT, 1000, 100);
+    myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
+  }else if(mode == 2){
+    myPushHatButton(Hat::RIGHT, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::RIGHT, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
+    myPushHatButton(Hat::RIGHT, 1000, 100);
+    myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
+  }
     // ホーム画面 > ゲーム画面
   myPushButton(Button::HOME, BUTTON_PUSHING_MSEC, 1000);
   myPushButton(Button::A, BUTTON_PUSHING_MSEC, 3000);
+}
+
+void runToSuana(){
+  // myTiltJoystick(0, 0, 20, -100, 230, BUTTON_PUSHING_MSEC);
+  myTiltJoystick(25, -100, 0, 0, 2530, BUTTON_PUSHING_MSEC);
+}
+
+void initPosFromSuana(){
+  myPush(Button::X, 1000);
+  myPushHatButton(Hat::LEFT_UP, 1000, BUTTON_PUSHING_MSEC);
+  myPush(Button::A, 2500);
+  
+  //カーソルを飛ぶ場所に合わせる
+  myPushHatButton(Hat::RIGHT_DOWN, 180, BUTTON_PUSHING_MSEC);
+  
+  myDelay(200);
+  myPush(Button::A, 1100);
+  // 選択画面対策として下入力2回
+  myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
+  myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
+  myPush(Button::A, 1300);
+  myPush(Button::B, 400, 5);
+}
+
+void suanaTimeLeap(int goorback){
+  // 以下の二行は一日進めるとき（goorback == 1）には必要ない
+  // ワットが手に入らないため
+  // だが、ワットが仮にのこっていると面倒なので処理は残した
+  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 500);
+  myPushButton(Button::B, BUTTON_PUSHING_MSEC, 2600);
+  // 募集画面に入る
+  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 1500);
+  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 4100); // 通信待機中
+  myPushButton(Button::HOME, BUTTON_PUSHING_MSEC, 1500);
+  changeTimeAtHome(goorback);
+  
+  myPushButton(Button::B, BUTTON_PUSHING_MSEC, 600); // 募集終了
+  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 1000);
+  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 4600);
 }
 
 
@@ -160,6 +241,14 @@ void setup(){
 
 void loop(){
     moveToInitialPlayerPosition();
-    symbolEncount();
-    execTimeLeep();
+    if(TIME_LEAP_MODE == RANKBATTLE){
+      symbolEncount();
+      execTimeLeep();
+    }else if(TIME_LEAP_MODE == SUANA){
+      if(loopcount > 0){
+        execTimeLeep();
+      }
+      symbolEncount();
+    }
+    loopcount++;
 }
