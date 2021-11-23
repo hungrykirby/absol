@@ -18,6 +18,7 @@ const int TIME_LEAP_MODE = RANKBATTLE;
 
 long int loopcount = 0;
 
+// delayだと自作の何かを差し込めなくなるので関数を作っています。
 void myDelay(int delay_ms, unsigned long method_start_ms = -1) {
   if(method_start_ms == -1){
     method_start_ms = millis();
@@ -28,6 +29,11 @@ void myDelay(int delay_ms, unsigned long method_start_ms = -1) {
   }
 }
 
+// ボタンを複数回押す
+// params:
+//  Button
+//  int: ボタンを押した後停止する時間
+//  int: ボタンを押す回数
 bool myPush(Button b, int d, int count = 1) {
   for (int i = 0; i < count; i++){
     myPushButton(b, BUTTON_PUSHING_MSEC, d);
@@ -36,6 +42,11 @@ bool myPush(Button b, int d, int count = 1) {
   return true;
 }
 
+// ボタンを押す
+// params:
+//  Button
+//  int: ボタンを押したままにする時間
+//  int: ボタンを押した後何も入力しない時間
 bool myPushButton(Button button, int holdtime, int delay_time_ms){
   method_in = true;
   SwitchController().pressButton(button);
@@ -46,6 +57,11 @@ bool myPushButton(Button button, int holdtime, int delay_time_ms){
   return true;
 }
 
+// ボタンを押す
+// params:
+//  Hat
+//  int: ボタンを押したままにする時間
+//  int: ボタンを押した後何も入力しない時間
 bool myPushHatButton(Hat button, int holdtime, int delay_time_ms)
 {
   method_in = true;
@@ -57,6 +73,7 @@ bool myPushHatButton(Hat button, int holdtime, int delay_time_ms)
   return true;
 }
 
+// スティックを倒す
 bool myTiltJoystick(int lx_per, int ly_per, int rx_per, int ry_per, int tilt_time_msec, int delay_time_ms)
 {
   method_in = true;
@@ -70,55 +87,53 @@ bool myTiltJoystick(int lx_per, int ly_per, int rx_per, int ry_per, int tilt_tim
 
 // 移動パート①
 void moveToInitialPlayerPosition(){
-    //タウンマップ開く
-    myPush(Button::X, 1000);
-    myPushHatButton(Hat::LEFT_UP, 1000, BUTTON_PUSHING_MSEC);
-    myPush(Button::A, 2500);
-    
-    //カーソルを飛ぶ場所に合わせる
-    // myPushHatButton(Hat::UP, 80, BUTTON_PUSHING_MSEC);
-    myPushHatButton(Hat::UP_RIGHT, 110, BUTTON_PUSHING_MSEC);
-    myPushHatButton(Hat::RIGHT, 80, BUTTON_PUSHING_MSEC);
-    
-    myDelay(200);
-    myPush(Button::A, 1100);
-    // 選択画面対策として下入力2回
-    myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
-    myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
-    myPush(Button::A, 1300);
-    myPush(Button::B, 400, 5);
+  //タウンマップ開く
+  myPush(Button::X, 1000);
+  myPushHatButton(Hat::LEFT_UP, 1000, BUTTON_PUSHING_MSEC);
+  myPush(Button::A, 2500);
+  
+  //カーソルを飛ぶ場所に合わせる
+  // myPushHatButton(Hat::UP, 80, BUTTON_PUSHING_MSEC);
+  myPushHatButton(Hat::UP_RIGHT, 110, BUTTON_PUSHING_MSEC);
+  myPushHatButton(Hat::RIGHT, 80, BUTTON_PUSHING_MSEC);
+  
+  myDelay(200);
+  myPush(Button::A, 1100);
+  // 選択画面対策として下入力2回
+  myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
+  myPushHatButton(Hat::DOWN, BUTTON_PUSHING_MSEC, 100);
+  myPush(Button::A, 1300);
+  myPush(Button::B, 400, 5);
 }
 
 //　移動パート②～戦闘パート
 void symbolEncount(){
-    SwitchController().setStickTiltRatio(-55, 100, 0, 0);
-    myDelay(300); // 少し進む
-    myPush(Button::LCLICK, 100, 15);
-    myDelay(200); // 鳴らし始める
-    SwitchController().setStickTiltRatio(0, 0, 0, 0);
-    // 戦闘開始～「たたかう」が表示されるまで待機。
-    // 下の時間は、使用する言語、ポケモン等で多少ずれる可能性があり、delay要調整
-    // 色違いのエフェクトが約2秒のため、「たたかう」が表示されて2秒以内に次の十字上↑入力がされるようにする
+  SwitchController().setStickTiltRatio(-55, 100, 0, 0);
+  myDelay(300); // 少し進む
+  myPush(Button::LCLICK, 100, 15);
+  myDelay(200); // 鳴らし始める
+  SwitchController().setStickTiltRatio(0, 0, 0, 0);
+  // 戦闘開始～「たたかう」が表示されるまで待機。
+  // 下の時間は、使用する言語、ポケモン等で多少ずれる可能性があり、delay要調整
+  // 色違いのエフェクトが約2秒のため、「たたかう」が表示されて2秒以内に次の十字上↑入力がされるようにする
 
-    // プレッシャーのアブソル用
-    myPush(Button::A, 200, 2);
-    myPush(Button::B, 200, 5);
-    // ガラルマタドガス（かがくへんか）がいるとプレッシャーが発動しないため精度が上がる。
-    // myDelay(7750); // 雨＋エレキフィールド＋かがくへんかガス 2021/11/04
-    // ピクシー 2021/10/13
-    myDelay(5700); // アイアント + かがくへんかガス 2021/09/23
-    myPush(Button::B, 200, 5);
-    // アブソルここまで
+  myPush(Button::A, 200, 2);
+  myPush(Button::B, 200, 5);
+  // ガラルマタドガス（かがくへんか）がいるとプレッシャーが発動しないため精度が上がる。
+  // myDelay(7750); // 雨＋エレキフィールド＋かがくへんかガス 2021/11/04
+  // ピクシー 2021/10/13
+  myDelay(5700); // アイアント + かがくへんかガス 2021/09/23
+  myPush(Button::B, 200, 5);
 
-    // 戦闘開始、色違い光モーションなければ十字上＞逃げる
-    // 色違いならば、1つめの上入力間に合わないため戦闘＞自爆技で自分側瀕死
-    // Aボタンを2回以上連続して押す場合は、次のポケモン選択画面で一番上以外のポケモンを繰り出さないようにする
-    myPushHatButton(Hat::UP, BUTTON_PUSHING_MSEC, 1000);
-    myPushButton(Button::A, BUTTON_PUSHING_MSEC, 800);
-    myPush(Button::B, 400, 2);
-    myPushHatButton(Hat::UP, 1500, BUTTON_PUSHING_MSEC);
-    myPush(Button::A, 800, 2);
-    myPush(Button::B, 100, 5);
+  // 戦闘開始、色違い光モーションなければ十字上＞逃げる
+  // 色違いならば、1つめの上入力間に合わないため戦闘＞自爆技で自分側瀕死
+  // Aボタンを2回以上連続して押す場合は、次のポケモン選択画面で一番上以外のポケモンを繰り出さないようにする
+  myPushHatButton(Hat::UP, BUTTON_PUSHING_MSEC, 1000);
+  myPushButton(Button::A, BUTTON_PUSHING_MSEC, 800);
+  myPush(Button::B, 400, 2);
+  myPushHatButton(Hat::UP, 1500, BUTTON_PUSHING_MSEC);
+  myPush(Button::A, 800, 2);
+  myPush(Button::B, 100, 5);
 }
 
 
@@ -194,7 +209,6 @@ void changeTimeAtHome(int mode){ // mode 1 => go 1 day, mode 2 => 1 day ago, mod
 }
 
 void runToSuana(){
-  // myTiltJoystick(0, 0, 20, -100, 230, BUTTON_PUSHING_MSEC);
   myTiltJoystick(25, -100, 0, 0, 2530, BUTTON_PUSHING_MSEC);
 }
 
@@ -234,21 +248,20 @@ void suanaTimeLeap(int goorback){
 
 
 void setup(){
-    myPush(Button::B, 500, 13); 
-    // 最初の数回の入力はswitchが認識しない場合があるので、無駄打ちをしておく
-    
+  myPush(Button::B, 500, 13); 
+  // 最初の数回の入力はswitchが認識しない場合があるので、無駄打ちをしておく
 }
 
 void loop(){
-    moveToInitialPlayerPosition();
-    if(TIME_LEAP_MODE == RANKBATTLE){
-      symbolEncount();
+  moveToInitialPlayerPosition();
+  if(TIME_LEAP_MODE == RANKBATTLE){
+    symbolEncount();
+    execTimeLeep();
+  }else if(TIME_LEAP_MODE == SUANA){
+    if(loopcount > 0){
       execTimeLeep();
-    }else if(TIME_LEAP_MODE == SUANA){
-      if(loopcount > 0){
-        execTimeLeep();
-      }
-      symbolEncount();
     }
-    loopcount++;
+    symbolEncount();
+  }
+  loopcount++;
 }
